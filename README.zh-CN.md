@@ -6,7 +6,7 @@
 
 ## 环境与安装
 
-需要 WSL/Linux OpenSSH、远端 Python 3.9+、Slurm 命令（`sbatch`、`scontrol`、`squeue`、`sacct`、`sstat`、`srun`）、已有许可证的 COMSOL 和匹配的 Java API、可写组织空间，以及计算节点上可读的 Slurm 作业 cgroup v2。Python 仅依赖标准库。
+需要 WSL/Linux OpenSSH、远端 Python 3.9+、HPC作业管理系统为Slurm、已有许可证的软件 和匹配的 Java API、可写组织空间，以及计算节点上可读的 Slurm 作业 cgroup v2。Python 仅依赖标准库。
 
 用户先在代理之外完成 GitHub 身份验证。私有仓库使用已有登录或 SSH agent，不把 token 写到 clone URL。只安装 skill 子目录，随后删除临时仓库副本：
 
@@ -18,7 +18,7 @@ cp -a "$workdir/repo/skills/comsol-slurm-run" "$HOME/.codex/skills/"
 rm -rf -- "$workdir"
 ```
 
-通过 `$comsol-slurm-run` 调用，或要求代理在组织目录运行并记录 COMSOL 研究。用户明确安装的 skill 是保留工具；临时 clone 是应删除的工作副本。本仓库没有测试文件或示例科学数据。
+通过 `$comsol-slurm-run` 调用，或要求代理在组织目录运行并记录研究细节。用户明确安装的 skill 是保留工具；临时 clone 是应删除的工作副本。本仓库没有测试文件或示例科学数据。
 
 ## SSH config：用户配置，代理只调用别名
 
@@ -29,7 +29,7 @@ Host hpc-org
     HostName <CLUSTER_LOGIN_HOST>
     User <CLUSTER_USER>
     Port <SSH_PORT>
-    IdentityFile ~/.ssh/id_ed25519_hpc
+    IdentityFile <FILE_PATH>
     IdentitiesOnly yes
     BatchMode yes
     PasswordAuthentication no
@@ -47,7 +47,7 @@ Host hpc-org
 
 ```bash
 ssh -F "$HOME/.ssh/config" hpc-org 'squeue -u "$USER"'
-scp -F "$HOME/.ssh/config" model.mph hpc-org:<ORG_UPLOAD_DIRECTORY>/
+scp -F "$HOME/.ssh/config" FILE_PATH hpc-org:<ORG_UPLOAD_DIRECTORY>/
 ```
 
 代理不得读取、打印或复制私钥、密码、token 或许可证内容；不得转储环境变量、使用 `sshpass`、把凭据写入命令行，或把 SSH agent 转发到集群。`ForwardAgent no` 不影响本地 SSH 客户端使用本地签名代理。
@@ -59,14 +59,7 @@ scp -F "$HOME/.ssh/config" model.mph hpc-org:<ORG_UPLOAD_DIRECTORY>/
 所有持久输入、作业提交和结果都放在 `/org` 下已存在的组织工作空间：
 
 ```text
-<ORG_ROOT>/
-├── models/comsol/uploads/        # 上传原件
-└── run_records/comsol/
-    ├── <unique-run-id>/          # 输入快照、结果、日志、元数据和源码
-    ├── script_backups/           # 带说明的 sbatch 备份
-    └── agent_training/
-        ├── records/<run-id>.json
-        └── runs.jsonl
++
 ```
 
 个人 home 不作为提交和持久结果目录。COMSOL 程序和许可证继续引用原有安装位置，不复制到仓库。脚本拒绝 `/org` 外的组织根目录；必须同时通过 `--account` 指定组织计费，文件存放位置本身不代表计费账户。分区和 QoS 来自站点批准配置；指定 CPU 分区不等于锁定某台物理节点。文件树默认只在聊天中输出，不额外保存到服务器。
