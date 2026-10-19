@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Slurm Run and Record"
+  short_description: "Submit software jobs and record Slurm execution"
