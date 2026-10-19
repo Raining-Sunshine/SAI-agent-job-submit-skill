@@ -6,7 +6,24 @@ An agent skill for preparing, submitting, monitoring and recording software jobs
 
 ## Setup
 
-Install the `skills/software-slurm-run` folder as a skill in your agent environment. Invoke `$software-slurm-run`, or ask the agent to submit a software job and record its progress.
+### Install in Codex CLI
+
+1. Start Codex CLI in your terminal with `codex`.
+2. Paste this request into the Codex conversation:
+
+   ```text
+   $skill-installer Install the skill from https://github.com/Raining-Sunshine/SAI-agent-job-submit-skill/tree/main/skills/software-slurm-run
+   ```
+
+3. After installation, use `/skills` to find `software-slurm-run`, or invoke it in your next message:
+
+   ```text
+   $software-slurm-run Prepare a software job using my existing cluster connection and report the requested resources before submission.
+   ```
+
+These requests go into Codex, not the shell. The installer installs the complete skill folder, including its references and metadata. If the skill does not appear, restart Codex. See the [official Codex skill documentation](https://learn.chatgpt.com/docs/build-skills).
+
+### Job requirements
 
 Requirements:
 

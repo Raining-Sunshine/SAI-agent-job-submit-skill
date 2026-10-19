@@ -6,7 +6,24 @@
 
 ## 环境与安装
 
-将仓库中的 `skills/software-slurm-run` 文件夹安装为代理技能。通过 `$software-slurm-run` 调用，也可以直接要求代理提交软件作业并记录运行情况。
+### 在 Codex CLI 中安装
+
+1. 在终端运行 `codex`，进入 Codex CLI。
+2. 将下面这段请求粘贴到 Codex 对话中：
+
+   ```text
+   $skill-installer 安装这个技能：https://github.com/Raining-Sunshine/SAI-agent-job-submit-skill/tree/main/skills/software-slurm-run
+   ```
+
+3. 安装完成后，使用 `/skills` 查找 `software-slurm-run`，或者在下一条消息中调用：
+
+   ```text
+   $software-slurm-run 使用我已有的集群连接准备软件作业，提交前说明申请的资源。
+   ```
+
+上述请求在 Codex 对话中输入，不是 shell 命令。安装器会安装完整的技能文件夹，包括引用文档和元数据。如果技能没有显示，重启 Codex。参见 [Codex 官方技能文档](https://learn.chatgpt.com/docs/build-skills)。
+
+### 作业运行条件
 
 需要具备：
 
