@@ -1,0 +1,5 @@
+interface:
+  display_name: "Cluster Software Jobs"
+  short_description: "Choose Slurm or PBS for a remote software job"
+policy:
+  allow_implicit_invocation: true

@@ -1,3 +1,5 @@
 interface:
   display_name: "Software Slurm Run and Record"
   short_description: "Submit software jobs and record Slurm execution"
+policy:
+  allow_implicit_invocation: true

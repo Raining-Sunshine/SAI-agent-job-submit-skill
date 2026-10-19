@@ -1,43 +1,54 @@
-# Software jobs on Slurm
+# Cluster software job skills: Slurm and PBS
 
 [中文说明](README.zh-CN.md)
 
-An agent skill for preparing, submitting, monitoring and recording software jobs on a Slurm cluster. It guides the agent to generate scripts for the current software and task, using the cluster's supported launch method.
+Describe the calculation you want in ordinary language. The agent helps prepare it for a remote cluster, submit it, check progress and collect results. Think of the cluster as shared computers, and Slurm or PBS as the service that queues work and assigns resources.
 
-## Setup
+This repository contains three cooperating instruction-based skills. The agent generates scripts for the actual software and task. The repository does not supply a ready-to-run scientific application, a cluster account or the software installation.
 
-### Install in Codex CLI
+| Skill | Purpose |
+|---|---|
+| `software-hpc-run` | General entry point: identify the target scheduler and select a backend |
+| `software-slurm-run` | Prepare, submit, inspect and finalize jobs on a confirmed Slurm cluster |
+| `software-pbs-run` | Perform the same workflow on a confirmed PBS cluster |
 
-1. Start Codex CLI in your terminal with `codex`.
-2. Paste this request into the Codex conversation:
+Install all three for automatic selection. The PBS workflow targets OpenPBS/PBS Professional; other PBS variants require site-specific verification. Single-node, multi-node, MPI, threaded and hybrid execution depend on software and cluster support.
 
-   ```text
-   $skill-installer Install the skill from https://github.com/Raining-Sunshine/SAI-agent-job-submit-skill/tree/main/skills/software-slurm-run
-   ```
+## First-time user guide
 
-3. After installation, use `/skills` to find `software-slurm-run`, or invoke it in your next message:
+### 1. Gather the essentials
 
-   ```text
-   $software-slurm-run Prepare a software job using my existing cluster connection and report the requested resources before submission.
-   ```
+- Codex CLI installed and signed in. Start with the [official Codex CLI guide](https://learn.chatgpt.com/docs/codex/cli) if needed.
+- A cluster account, connection instructions and permission to use computing resources from your provider or administrator.
+- Software available on the cluster, with any required license.
+- Your calculation's input files and an intended result destination.
 
-These requests go into Codex, not the shell. The installer installs the complete skill folder, including its references and metadata. If the skill does not appear, restart Codex. See the [official Codex skill documentation](https://learn.chatgpt.com/docs/build-skills).
+You can ask the agent to discover available accounts, queues, partitions and resource settings. If it cannot determine something, it should explain what to ask the administrator. You do not need to learn MPI before your first task.
 
-### Job requirements
+### 2. Install all three skills in Codex
 
-Requirements:
+**In your local terminal:**
 
-- An SSH client and an established cluster connection.
-- Slurm access and an approved billing account, partition and, where applicable, QoS.
-- Software available on the compute nodes, with any required license.
-- Writable storage selected for the task.
-- A compatible MPI runtime when distributed execution is requested.
+```bash
+codex
+```
 
-Use the software's supported batch interface. Additional interpreters or APIs are needed only when the chosen workflow requires them.
+If the command is missing, complete the installation in the previous section. Once Codex opens, send the following to the **Codex conversation**, not to the shell:
 
-## SSH connection
+```text
+$skill-installer
+Install these three skills from https://github.com/Raining-Sunshine/SAI-agent-job-submit-skill:
+skills/software-hpc-run
+skills/software-slurm-run
+skills/software-pbs-run
+If a skill is already installed, inspect local changes before updating it to the repository version.
+```
 
-Configure the connection in your own terminal. A minimal SSH config entry is:
+Use `/skills` in Codex to check that all three are available. Restart Codex if they do not appear. See the [official skill documentation](https://learn.chatgpt.com/docs/build-skills) for installation and invocation behavior.
+
+### 3. Set up and test the cluster connection
+
+Use an existing working SSH alias when available. For a new connection, add a minimal entry to **your local OpenSSH user configuration file**, commonly `~/.ssh/config` on Linux/macOS/WSL. This block is configuration text, not shell commands.
 
 ```sshconfig
 Host cluster
@@ -48,40 +59,122 @@ Host cluster
     IdentitiesOnly yes
 ```
 
-Use the key location appropriate to your setup. Complete the initial connection and unlock any protected key in your own terminal. The agent uses the configured alias:
+| Value | What to enter |
+|---|---|
+| `cluster` | A short name you choose for this connection and give to the agent |
+| `<HOST>` | Login server address supplied by the provider |
+| `<USER>` | Your cluster login name |
+| `<PORT>` | SSH port supplied by the provider |
+| `<KEY_FILE>` | The location of your local key file, not its contents |
+
+Replace each placeholder including its angle brackets. Verify the initial host identity using the provider's instructions and unlock a protected key in your own terminal. Follow the provider's configuration if it uses a different authentication method.
+
+**Test from the same local environment where you run Codex:**
 
 ```bash
-ssh cluster 'squeue -u "$USER"'
+ssh cluster exit
 ```
 
-The agent does not need to read key material or license contents.
+A successful return without an error confirms SSH connectivity, not job-submission permission. Resolve host lookup, timeout or authentication errors using the provider's connection instructions. The agent uses the connection alias without reading key material or license contents.
 
-## Prepare and submit
+### 4. Ask for an environment check and a first job plan
 
-Provide the input, destination, software launch method, billing account and resource needs for the current task. Storage follows the location you select; the skill does not prescribe a directory layout.
+Send this request in the **Codex conversation**, filling in your information:
 
-Finish uploading before preparing the job. A temporary upload name can be changed after transfer completes. Preserve the original input and create a separate output. Where the software requires a filename extension, retain its required format.
+```text
+I am using these cluster job skills for the first time.
+Please identify whether the target uses Slurm or PBS.
 
-The agent checks the input, prepares a separate run, and generates a submission script using the software's supported options. It records input checksums, the submitted script, software version when available, and requested resources. It preserves model settings unless you request changes.
+Cluster connection alias: ...
+Software to run: ...
+Input files are on: my computer / the server, at ...
+Calculation I want to perform: ...
+Where I want the results saved: ...
 
-Parallel execution can use one or more nodes, MPI, threads, or a hybrid arrangement. Node count, task count, CPUs per task and memory follow the workload and cluster configuration. The launch command must match the allocation and the software's MPI compatibility; increasing resources does not guarantee proportional speedup.
+Check the connection, software and execution requirements first.
+Do not submit a job yet.
+Discover available resource settings and suggest a plan.
+For anything you cannot determine, tell me what to ask the administrator.
+```
 
-Preparation alone does not submit a job. A submission request authorizes one job. The agent validates the script and scheduler request, submits once, saves the job ID, and checks its state. If the submission response is uncertain, it checks the queue and existing evidence before trying again.
+Ordinary language can activate the installed skills. If selection does not occur, prefix the request with `$software-hpc-run`.
 
-## Monitor and record
+The agent performs read-only checks on the target and chooses the Slurm or PBS skill. If both systems are present, access fails or evidence is insufficient, it explains the uncertainty and asks for the missing context. It does not submit a test job to identify the scheduler. Experienced users can also invoke `$software-slurm-run` or `$software-pbs-run` directly.
 
-The agent records scheduler state, raw software output, elapsed time, exit status, CPU and memory observations. Where available, it also records model settings, mesh statistics, degrees of freedom and convergence history.
+If inputs are local, the agent first establishes a remote destination and transfers them as needed. If they are already remote, it uses those files. Preparation starts after upload completion. A temporary upload name can be changed when transfer finishes while retaining the format required by the software. Originals are preserved and results are saved separately.
 
-For multiple nodes, collect observations across the allocation. A measurement from the launch node alone does not represent the whole job. Keep node and step context when combining samples. Distinguish per-core CPU usage from allocation utilization, and per-task memory from aggregate memory.
+You should receive the detected scheduler, software availability, input checks, proposed resources and maximum runtime, plus any missing information. The plan should explain nodes, processes/threads, total memory and how memory is allocated.
 
-Preserve original solver table headings and parameter context. Linear residuals, nonlinear errors and time steps have different meanings. Missing observations remain unavailable.
+### 5. Submit the agreed plan
 
-A zero exit code is one piece of evidence. Check the scheduler's terminal state, software completion messages and expected output before reporting success. Physical validity requires separate scientific assessment.
+In the **Codex conversation**:
 
-## Finish
+```text
+Submit this job using the plan we just agreed on.
+Tell me the full job ID and its current state.
+```
 
-After the job reaches a confirmed terminal state, refresh accounting and save the final record. Keep inputs, results, nonempty logs, the submitted script and reproducibility information. Clean only temporary files created for this run after the records are saved; retain requested checkpoints.
+Submission may consume your allocation or incur charges under the provider's rules. Save the returned **cluster alias, scheduler and full job ID**. Check the requested resources, observed state and actual result/log locations.
 
-Node failures or forced termination can interrupt finalization. Recover available observations before cleanup and report anything that could not be verified.
+Accepted does not mean running. Queued, held, running and finished are different states; the agent should explain the scheduler's reported waiting reason. If the submission response is uncertain, check for the existing job before requesting another submission.
 
-The [skill instructions](skills/software-slurm-run/SKILL.md) describe the workflow; [recording guidance](skills/software-slurm-run/references/recording.md) covers parallel resource measurements and final records.
+### 6. Check progress and retrieve results
+
+**Check progress:**
+
+```text
+Check job ... on cluster ...
+Explain any waiting reason or error. Do not resubmit it.
+```
+
+**Check results:**
+
+```text
+Check whether job ... has finished, consolidate its records,
+and tell me where the results and logs are.
+```
+
+**Download results:**
+
+```text
+Download this job's results to this location on my computer: ...
+```
+
+A formally submitted batch job is normally managed by the scheduler independently of your local terminal; interactive allocations differ. Closing the conversation does not arrange future progress messages. Requested continuous collection runs inside the job. You can later resume checking and finalization using the target and full job ID.
+
+History may be delayed or no longer retained. An absent job does not prove successful completion: the agent uses available logs and outputs and reports missing evidence. Verify downloaded files; downloading results does not automatically delete the remote copies.
+
+### Common sticking points
+
+| Situation | Next step |
+|---|---|
+| A skill cannot be found | Check that all three installed; restart Codex if necessary and explicitly invoke the general entry point |
+| SSH works but scheduler commands are missing | Check the provider's login host and environment; local scheduler installation does not configure the remote cluster |
+| A queue query succeeds with no jobs | There may be no visible jobs; distinguish this from a connection or query error |
+| Account, partition or queue is unknown | Ask the agent to inspect available settings, then ask the administrator for anything requiring permission information |
+| A job keeps waiting | Inspect its scheduling reason instead of repeatedly submitting it |
+| A finished PBS job cannot be queried | History may be disabled or expired; inspect retained records and logs |
+| Skills installed, but no input files exist | Skill installation does not create scientific inputs; prepare the files required by the software |
+
+## A few useful terms
+
+| Term | Meaning |
+|---|---|
+| Cluster / node | Shared computers / a computer or resource unit used for computation |
+| Scheduler | Service that queues jobs and assigns resources, such as Slurm or PBS |
+| Partition / queue | Resource or scheduling destination; options are not interchangeable between systems |
+| Account / project | Allocation or project charged for the work, not necessarily the login username |
+| QoS | A priority and resource-limit policy used at some sites |
+| CPU / memory / walltime | Processing resources / runtime storage / maximum permitted runtime; walltime is not a completion estimate |
+| MPI / threads | Cooperation between processes / parallel work within a process |
+| Job ID / logs | Scheduler-issued task identifier / recorded program output |
+
+## Records and cleanup
+
+Keep raw software output, scheduler state, timing, exit status and available CPU/memory observations. Record settings, mesh, degrees of freedom and convergence when the software exposes them; unavailable metrics remain unavailable. Distributed measurements must state their coverage and aggregation method.
+
+Neither a zero exit code nor an output file alone proves successful computation. Assess software completion, scheduler outcome and expected outputs together. Scientific validity requires separate assessment.
+
+Save records before removing this run's unused temporary artifacts. Retain inputs, results, nonempty logs, submitted scripts and requested checkpoints.
+
+Skill instructions: [automatic selection](skills/software-hpc-run/SKILL.md), [Slurm](skills/software-slurm-run/SKILL.md), [PBS](skills/software-pbs-run/SKILL.md). Advanced recording: [Slurm](skills/software-slurm-run/references/recording.md), [PBS](skills/software-pbs-run/references/recording.md).

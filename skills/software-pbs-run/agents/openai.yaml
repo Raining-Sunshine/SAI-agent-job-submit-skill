@@ -1,0 +1,5 @@
+interface:
+  display_name: "Software PBS Run and Record"
+  short_description: "Submit software jobs and record PBS execution"
+policy:
+  allow_implicit_invocation: true
