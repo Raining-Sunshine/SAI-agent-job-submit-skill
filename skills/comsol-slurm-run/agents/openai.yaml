@@ -1,0 +1,3 @@
+interface:
+  display_name: "COMSOL Slurm Run and Record"
+  short_description: "Run COMSOL in organization storage and record solver data"
